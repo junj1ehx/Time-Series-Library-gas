@@ -165,3 +165,6 @@ result_anomaly_detection.txt
 scripts/augmentation/
 run_anylearn.py
 environment.txt
+/1111_result/
+/1113_result/
+*.zip

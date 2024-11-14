@@ -24,5 +24,7 @@ python -u run.py \
   --d_model 128 \
   --des 'Exp' \
   --itr 1 \
+  --use_multi_gpu \
+  --devices 0,1
 
 done

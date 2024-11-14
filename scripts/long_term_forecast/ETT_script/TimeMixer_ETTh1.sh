@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0,1
 
 model_name=TimeMixer
 
@@ -11,7 +11,7 @@ d_model=16
 d_ff=32
 train_epochs=10
 patience=10
-batch_size=16
+batch_size=256
 
 python -u run.py \
   --task_name long_term_forecast \
@@ -38,7 +38,10 @@ python -u run.py \
   --batch_size 128 \
   --down_sampling_layers $down_sampling_layers \
   --down_sampling_method avg \
+  --use_multi_gpu \
+  --devices 0,1 \
   --down_sampling_window $down_sampling_window
+  
 
 
 python -u run.py \
@@ -66,6 +69,8 @@ python -u run.py \
   --batch_size 128 \
   --down_sampling_layers $down_sampling_layers \
   --down_sampling_method avg \
+  --use_multi_gpu \
+  --devices 0,1 \
   --down_sampling_window $down_sampling_window
 
 
@@ -94,6 +99,8 @@ python -u run.py \
   --batch_size 128 \
   --down_sampling_layers $down_sampling_layers \
   --down_sampling_method avg \
+  --use_multi_gpu \
+  --devices 0,1 \
   --down_sampling_window $down_sampling_window
 
 
@@ -122,4 +129,6 @@ python -u run.py \
   --batch_size 128 \
   --down_sampling_layers $down_sampling_layers \
   --down_sampling_method avg \
+  --use_multi_gpu \
+  --devices 0,1 \
   --down_sampling_window $down_sampling_window

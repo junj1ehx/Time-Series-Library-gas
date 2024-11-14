@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=0,1
 
 model_name=TimesNet
 
@@ -24,8 +24,11 @@ python -u run.py \
   --d_ff 32 \
   --des 'Exp' \
   --itr 1 \
-  --top_k 5 
-
+  --top_k 5 \
+  --use_multi_gpu \
+  --devices 0,1 \
+  --batch_size 256 \
+  --num_workers 80
 
 python -u run.py \
   --task_name long_term_forecast \
