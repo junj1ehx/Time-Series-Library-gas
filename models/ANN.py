@@ -24,7 +24,7 @@ class Model(nn.Module):
         for _ in range(self.num_layers):
             self.hidden_layers.append(nn.Linear(self.d_model, self.d_model))
             self.hidden_layers.append(nn.ReLU())
-            self.hidden_layers.append(nn.Dropout(self.dropout))
+            # self.hidden_layers.append(nn.Dropout(self.dropout))
 
         # Output projection
         self.projection = nn.Linear(self.d_model, self.enc_in)

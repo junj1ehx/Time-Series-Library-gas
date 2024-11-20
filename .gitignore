@@ -168,3 +168,7 @@ environment.txt
 /1111_result/
 /1113_result/
 *.zip
+*.png
+*.csv
+*.pdf
+*.npy

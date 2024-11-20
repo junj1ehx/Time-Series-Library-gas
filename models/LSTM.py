@@ -28,7 +28,12 @@ class Model(nn.Module):
         )
 
         # Output projection
-        self.projection = nn.Linear(self.d_model, self.enc_in)
+        # self.projection = nn.Linear(self.d_model, self.enc_in)
+        self.projection = nn.Sequential(
+            nn.Linear(self.d_model, self.d_model),
+            nn.Tanh(),
+            nn.Linear(self.d_model, self.enc_in),
+        )
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
         # Embedding

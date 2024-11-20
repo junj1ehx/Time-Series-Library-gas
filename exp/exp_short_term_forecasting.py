@@ -92,7 +92,11 @@ class Exp_Short_Term_Forecast(Exp_Basic):
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
                 batch_y_mark = batch_y_mark[:, -self.args.pred_len:, f_dim:].to(self.device)
-                loss_value = criterion(batch_x, self.args.frequency_map, outputs, batch_y, batch_y_mark)
+
+                if self.args.data == 'm4':
+                    loss_value = criterion(batch_x, self.args.frequency_map, outputs, batch_y, batch_y_mark)
+                else:
+                    loss_value = criterion(insample=batch_x, freq=0, forecast=outputs, target=batch_y, mask=batch_y_mark)
                 loss_sharpness = mse((outputs[:, 1:, :] - outputs[:, :-1, :]), (batch_y[:, 1:, :] - batch_y[:, :-1, :]))
                 loss = loss_value  # + loss_sharpness * 1e-5
                 train_loss.append(loss.item())
@@ -127,7 +131,7 @@ class Exp_Short_Term_Forecast(Exp_Basic):
         return self.model
 
     def vali(self, train_loader, vali_loader, criterion):
-        x, _ = train_loader.dataset.last_insample_window()
+        x = train_loader.dataset.data_x[-1:]
         y = vali_loader.dataset.timeseries
         x = torch.tensor(x, dtype=torch.float32).to(self.device)
         x = x.unsqueeze(-1)
@@ -152,7 +156,10 @@ class Exp_Short_Term_Forecast(Exp_Basic):
             true = torch.from_numpy(np.array(y))
             batch_y_mark = torch.ones(true.shape)
 
-            loss = criterion(x.detach().cpu()[:, :, 0], self.args.frequency_map, pred[:, :, 0], true, batch_y_mark)
+            if self.args.data == 'm4':
+                loss = criterion(x.detach().cpu()[:, :, 0], self.args.frequency_map, pred[:, :, 0], true, batch_y_mark)
+            else:
+                loss = criterion(forecast=pred[:, :, 0], target=true, mask=batch_y_mark)
 
         self.model.train()
         return loss

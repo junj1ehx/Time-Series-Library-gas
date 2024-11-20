@@ -263,7 +263,7 @@ class Dataset_Gas(Dataset):
             total_points = 0
             for well_name, well_data in list(well_groups)[:num_train_well]:
                 start_point = total_points
-                end_point = start_point + len(well_data) - self.seq_len - self.pred_len
+                end_point = start_point + max(len(well_data) - self.seq_len - self.pred_len, 0)
                 # print(f"Training well: {well_name}, points from {start_point} to {end_point}")
                 writer.writerow([well_name, 'train', start_point, end_point])
                 for i in range(end_point - start_point + 1):
@@ -273,7 +273,7 @@ class Dataset_Gas(Dataset):
             total_points = 0
             for well_name, well_data in list(well_groups)[num_train_well:num_train_well + num_vali_well]:
                 start_point = total_points
-                end_point = start_point + len(well_data) - self.seq_len - self.pred_len
+                end_point = start_point + max(len(well_data) - self.seq_len - self.pred_len, 0)
                 # print(f"Valid well: {well_name}, points from {start_point} to {end_point}")
                 writer.writerow([well_name, 'vali', start_point, end_point])
                 for i in range(end_point - start_point + 1):
@@ -283,7 +283,7 @@ class Dataset_Gas(Dataset):
             total_points = 0
             for well_name, well_data in list(well_groups)[num_train_well + num_vali_well:]:
                 start_point = total_points
-                end_point = start_point + len(well_data) - self.seq_len - self.pred_len
+                end_point = start_point + max(len(well_data) - self.seq_len - self.pred_len, 0)
                 # print(f"Test well: {well_name}, points from {start_point} to {end_point}")
                 writer.writerow([well_name, 'test', start_point, end_point])
                 for i in range(end_point - start_point + 1):

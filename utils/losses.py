@@ -68,6 +68,21 @@ class smape_loss(nn.Module):
                                           t.abs(forecast.data) + t.abs(target.data)) * mask)
 
 
+class smape_loss_no_mask(nn.Module):
+    def __init__(self):
+        super(smape_loss_no_mask, self).__init__()
+
+    def forward(self, forecast: t.Tensor, target: t.Tensor) -> t.float:
+        """
+        sMAPE loss as defined in https://robjhyndman.com/hyndsight/smape/ (Makridakis 1993)
+
+        :param forecast: Forecast values. Shape: batch, time
+        :param target: Target values. Shape: batch, time
+        :return: Loss value
+        """
+        return 200 * t.mean(divide_no_nan(t.abs(forecast - target),
+                                          t.abs(forecast.data) + t.abs(target.data)))
+
 class mase_loss(nn.Module):
     def __init__(self):
         super(mase_loss, self).__init__()
