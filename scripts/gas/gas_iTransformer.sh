@@ -1,7 +1,7 @@
 export CUDA_VISIBLE_DEVICES=0,1
 
 # Block_wells=("桃2区块.csv" "桃7区块.csv" "苏11区块.csv" "苏14区块.csv" "苏19区块.csv" "苏19区块（风险）.csv" "苏20区块.csv" "苏46区块.csv" "苏47区块.csv" "苏48区块.csv" "苏49区块.csv" "苏49区块（风险）.csv" "苏59区块.csv" "苏75区块.csv")
-wells=("苏14区块.csv" "苏59区块.csv" "苏49区块.csv")
+#wells=("苏14区块.csv" "苏59区块.csv" "苏49区块.csv")
 model_name=iTransformer
 seq_len=$1
 label_len=$2
@@ -29,10 +29,11 @@ for well in ${wells[@]}; do
         --dec_in $enc_in \
         --c_out $enc_in \
         --des 'Exp' \
-        --d_model 128 \
+        --d_model 512 \
         --d_ff 128 \
         --itr 1 \
-        --batch_size 256 \
+        --batch_size 512 \
         --use_multi_gpu \
-        --devices 0,1
+        --devices 0,1 \
+        --inverse
 done

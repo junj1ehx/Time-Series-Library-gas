@@ -38,6 +38,6 @@ for well in ${wells[@]}; do
         --use_multi_gpu \
         --devices 0,1 \
         --freq m \
-        --batch_size 1024 \
+        --batch_size 2048 \
         --inverse
 done

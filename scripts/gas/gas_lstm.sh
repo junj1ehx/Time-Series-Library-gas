@@ -1,6 +1,7 @@
 export CUDA_VISIBLE_DEVICES=0,1
 
-wells=("苏14区块.csv" "苏59区块.csv" "苏49区块.csv")
+# wells=("苏14区块.csv" "苏59区块.csv" "苏49区块.csv")
+wells=("苏14区块.csv")
 model_name=LSTM
 seq_len=$1
 label_len=$2
@@ -20,20 +21,18 @@ for well in ${wells[@]}; do
         --seq_len $seq_len \
         --label_len $label_len \
         --pred_len $pred_len \
-        --e_layers 2 \
+        --e_layers 1 \
         --d_layers 1 \
         --factor 3 \
         --enc_in $enc_in \
         --dec_in $enc_in \
         --c_out $enc_in \
-        --d_model 256 \
-        --d_ff 512 \
-        --top_k 5 \
+        --d_model 512 \
         --des 'Exp' \
         --itr 1 \
         --use_multi_gpu \
         --devices 0,1 \
         --freq m \
-        --batch_size 256 \
+        --batch_size 2048 \
         --inverse
 done
