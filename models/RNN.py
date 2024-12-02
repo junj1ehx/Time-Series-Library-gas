@@ -14,7 +14,7 @@ class Model(nn.Module):
         self.enc_in = configs.enc_in
         self.d_model = configs.d_model
         self.dropout = configs.dropout if hasattr(configs, 'dropout') else 0.1
-        self.num_layers = configs.e_layers if hasattr(configs, 'e_layers') else 2
+        self.num_layers = configs.e_layers if hasattr(configs, 'e_layers') else 1
 
         # Encoding
         self.enc_embedding = DataEmbedding(self.enc_in, self.d_model, configs.embed, configs.freq, configs.dropout)

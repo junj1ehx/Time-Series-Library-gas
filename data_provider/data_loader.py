@@ -256,38 +256,55 @@ class Dataset_Gas(Dataset):
         block_name = os.path.splitext(self.data_path)[0]  # Assuming block name is derived from the data_path
         csv_file_path = f"{block_name}_well_info_seq{self.seq_len}_label{self.label_len}_pred{self.pred_len}.csv"
 
+        self.data_location_list = [[] for _ in range(3)]  # New list to store data locations
+        self.data_location_wellname_list = [[] for _ in range(3)]
         with open(csv_file_path, mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['well', 'set', 'start_point', 'end_point'])
-            self.data_location_list = [[] for _ in range(3)]  # New list to store data locations
+            
             total_points = 0
             for well_name, well_data in list(well_groups)[:num_train_well]:
+                if len(well_data) < self.seq_len + self.pred_len + self.label_len:
+                    writer.writerow([well_name, 'train', total_points, total_points])
+                    total_points += len(well_data)
+                    continue
                 start_point = total_points
-                end_point = start_point + max(len(well_data) - self.seq_len - self.pred_len, 0)
+                end_point = start_point + len(well_data) - self.seq_len - self.pred_len
                 # print(f"Training well: {well_name}, points from {start_point} to {end_point}")
                 writer.writerow([well_name, 'train', start_point, end_point])
                 for i in range(end_point - start_point + 1):
                     self.data_location_list[0].append(start_point + i)
+                    self.data_location_wellname_list[0].append(well_name)
                 total_points = end_point + self.seq_len + self.pred_len
             num_train = total_points
             total_points = 0
             for well_name, well_data in list(well_groups)[num_train_well:num_train_well + num_vali_well]:
+                if len(well_data) < self.seq_len + self.pred_len + self.label_len:
+                    writer.writerow([well_name, 'vali', total_points, total_points])
+                    total_points += len(well_data)
+                    continue
                 start_point = total_points
-                end_point = start_point + max(len(well_data) - self.seq_len - self.pred_len, 0)
+                end_point = start_point + len(well_data) - self.seq_len - self.pred_len
                 # print(f"Valid well: {well_name}, points from {start_point} to {end_point}")
                 writer.writerow([well_name, 'vali', start_point, end_point])
                 for i in range(end_point - start_point + 1):
                     self.data_location_list[1].append(start_point + i)
-                total_points = end_point + self.seq_len + self.pred_len 
+                    self.data_location_wellname_list[1].append(well_name)
+                total_points = end_point + self.seq_len + self.pred_len if end_point + self.seq_len + self.pred_len > total_points else total_points
             num_vali = total_points
             total_points = 0
             for well_name, well_data in list(well_groups)[num_train_well + num_vali_well:]:
+                if len(well_data) < self.seq_len + self.pred_len + self.label_len:
+                    writer.writerow([well_name, 'test', total_points, total_points])
+                    total_points += len(well_data)
+                    continue
                 start_point = total_points
-                end_point = start_point + max(len(well_data) - self.seq_len - self.pred_len, 0)
+                end_point = start_point + len(well_data) - self.seq_len - self.pred_len
                 # print(f"Test well: {well_name}, points from {start_point} to {end_point}")
                 writer.writerow([well_name, 'test', start_point, end_point])
                 for i in range(end_point - start_point + 1):
                     self.data_location_list[2].append(start_point + i)
+                    self.data_location_wellname_list[2].append(well_name)
                 total_points = end_point + self.seq_len + self.pred_len
             num_test = total_points
             print(f"num_test: {num_test}, num_train: {num_train}, num_vali: {num_vali}")
@@ -298,7 +315,13 @@ class Dataset_Gas(Dataset):
             for well_name, well_data in list(well_groups)[:num_train_well]:
                 total_train_points += len(well_data)
 
-        
+        data_location_csv_file_path = f"{block_name}_data_location_seq{self.seq_len}_label{self.label_len}_pred{self.pred_len}.csv"
+        # output data location list to csv
+        with open(data_location_csv_file_path, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            for i in range(3):
+                for j in range(len(self.data_location_list[i])):
+                    writer.writerow([self.data_location_wellname_list[i][j], i, self.data_location_list[i][j]])
         # print(f"Number of points in training wells: {total_train_points}")
         cols.remove('井号')
         cols.remove('区块')
