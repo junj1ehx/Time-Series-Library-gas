@@ -28,7 +28,7 @@ for well in ${wells[@]}; do
         --label_len $label_len \
         --pred_len $pred_len \
         --enc_in $enc_in \
-        --d_model 32 \
+        --d_model 64 \
         --des 'Exp' \
         --itr 1 \
         --use_multi_gpu \

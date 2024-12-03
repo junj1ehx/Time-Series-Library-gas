@@ -27,7 +27,7 @@ for well in ${wells[@]}; do
         --enc_in $enc_in \
         --dec_in $enc_in \
         --c_out $enc_in \
-        --d_model 32 \
+        --d_model 64 \
         --des 'Exp' \
         --itr 1 \
         --use_multi_gpu \
