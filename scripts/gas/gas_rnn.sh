@@ -24,10 +24,10 @@ for well in ${wells[@]}; do
         --label_len $label_len \
         --pred_len $pred_len \
         --enc_in $enc_in \
-        --d_model 256 \
+        --d_model 32 \
         --itr 1 \
         --use_multi_gpu \
         --devices 0,1 \
-        --batch_size 2048 \
+        --batch_size 512 \
         --inverse
 done

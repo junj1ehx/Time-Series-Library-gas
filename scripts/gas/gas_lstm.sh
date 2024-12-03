@@ -27,12 +27,12 @@ for well in ${wells[@]}; do
         --enc_in $enc_in \
         --dec_in $enc_in \
         --c_out $enc_in \
-        --d_model 512 \
+        --d_model 32 \
         --des 'Exp' \
         --itr 1 \
         --use_multi_gpu \
         --devices 0,1 \
         --freq m \
-        --batch_size 2048 \
+        --batch_size 512 \
         --inverse
 done

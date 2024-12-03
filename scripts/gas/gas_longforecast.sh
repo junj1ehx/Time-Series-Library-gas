@@ -7,9 +7,9 @@ wells=("苏14区块.csv")
 # Scripts to skip and custom model scripts
 # scripts_to_skip=("gas_longforecast.sh" "gas_TimeXer.sh" "gas_DLinear.sh" "gas_PAttn.sh")
 # scripts_to_run=("gas_lstm.sh" "gas_rnn.sh" "gas_svm.sh" "gas_ann.sh" "gas_PatchTST.sh" "gas_timemixer.sh" "gas_iTransformer.sh")
-# scripts_to_run=("gas_lstm.sh" "gas_rnn.sh" "gas_svm.sh" "gas_ann.sh" "gas_timemixer.sh")
+scripts_to_run=("gas_lstm.sh" "gas_rnn.sh" "gas_svm.sh" "gas_ann.sh" "gas_timemixer.sh")
 # scripts_to_run=("gas_ann.sh" "gas_rnn.sh")
-scripts_to_run=("gas_timemixer.sh")
+# scripts_to_run=("gas_timemixer.sh")
 scripts_custom_model=("gas_svm.sh" "gas_ann.sh" "gas_lstm.sh" "gas_rnn.sh")
 # "gas_PatchTST.sh" "gas_Timemixer.sh"
 # scripts_custom_model=("gas_ann.sh")
@@ -68,13 +68,13 @@ run_scripts_in_parallel() {
 # run_scripts_in_parallel 8 0 4 28 M
 # run_scripts_in_parallel 12 0 4 28 M
 run_scripts_in_parallel 6 0 3 1 S
-# run_scripts_in_parallel 6 0 6 1 S
-# run_scripts_in_parallel 12 0 3 1 S
-# run_scripts_in_parallel 12 0 6 1 S
-# run_scripts_in_parallel 12 0 12 1 S
-# run_scripts_in_parallel 6 0 12 1 S
-# run_scripts_in_parallel 6 0 21 1 S
-# run_scripts_in_parallel 6 0 45 1 S
-# run_scripts_in_parallel 12 0 24 1 S
-# run_scripts_in_parallel 12 0 42 1 S
-# run_scripts_in_parallel 12 0 90 1 S
+run_scripts_in_parallel 6 0 6 1 S
+run_scripts_in_parallel 12 0 3 1 S
+run_scripts_in_parallel 12 0 6 1 S
+run_scripts_in_parallel 12 0 12 1 S
+run_scripts_in_parallel 6 0 12 1 S
+run_scripts_in_parallel 6 0 21 1 S
+run_scripts_in_parallel 6 0 45 1 S
+run_scripts_in_parallel 12 0 24 1 S
+run_scripts_in_parallel 12 0 42 1 S
+run_scripts_in_parallel 12 0 90 1 S

@@ -27,6 +27,6 @@ for well in ${wells[@]}; do
         --itr 1 \
         --use_multi_gpu \
         --devices 0,1 \
-        --batch_size 2048 \
+        --batch_size 512 \
         --inverse
 done
