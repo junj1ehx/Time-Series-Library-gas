@@ -85,6 +85,13 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         if not os.path.exists(path):
             os.makedirs(path)
 
+
+        # Create CSV file for logging metrics
+        metrics_file = os.path.join(path, 'training_metrics.csv')
+        with open(metrics_file, 'w') as f:
+            # Write header
+            f.write('epoch,train_loss,val_loss,test_loss,learning_rate\n')
+
         time_now = time.time()
 
         train_steps = len(train_loader)
@@ -118,6 +125,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        outputs = torch.clamp(outputs, min=0)
 
                         f_dim = -1 if self.args.features == 'MS' else 0
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
@@ -129,6 +137,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                    outputs = torch.clamp(outputs, min=0)
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss = criterion(outputs, batch_y)
                     train_loss.append(loss.item())
@@ -153,6 +162,13 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
             test_loss = self.vali(test_data, test_loader, criterion)
+
+            # Get current learning rate
+            current_lr = model_optim.param_groups[0]['lr']
+
+            # Log metrics to CSV
+            with open(metrics_file, 'a') as f:
+                f.write(f'{epoch+1},{train_loss:.7f},{vali_loss:.7f},{test_loss:.7f},{current_lr}\n')
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
