@@ -36,6 +36,19 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         return model_optim
 
     def _select_criterion(self):
+        if self.args.model == 'SVM':
+            def svm_criterion(pred, true):
+                if isinstance(self.model, nn.DataParallel):
+                    model = self.model.module
+                else:
+                    model = self.model
+                
+                # Get the model's current parameters
+                epsilon = model.epsilon
+                C = model.C
+                    
+                return model.compute_loss(pred, true, epsilon=epsilon, C=C)
+        
         if self.args.loss == 'SMAPE':
             criterion = smape_loss_no_mask()
         else:
@@ -64,7 +77,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
                 f_dim = -1 if self.args.features == 'MS' else 0
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                outputs = torch.clamp(outputs, min=0)
+                # outputs = torch.clamp(outputs, min=0)
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
                 pred = outputs.detach().cpu()
@@ -126,7 +139,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-                        outputs = torch.clamp(outputs, min=0)
+                        # outputs = torch.clamp(outputs, min=0)
 
                         f_dim = -1 if self.args.features == 'MS' else 0
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
@@ -138,7 +151,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    outputs = torch.clamp(outputs, min=0)
+                    # outputs = torch.clamp(outputs, min=0)
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss = criterion(outputs, batch_y)
                     train_loss.append(loss.item())
@@ -218,7 +231,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
                 f_dim = -1 if self.args.features == 'MS' else 0
                 outputs = outputs[:, -self.args.pred_len:, :]
-                outputs = torch.clamp(outputs, min=0)
+                # outputs = torch.clamp(outputs, min=0)
                 batch_y = batch_y[:, -self.args.pred_len:, :].to(self.device)
                 outputs = outputs.detach().cpu().numpy()
                 batch_y = batch_y.detach().cpu().numpy()
