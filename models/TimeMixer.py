@@ -4,7 +4,12 @@ import torch.nn.functional as F
 from layers.Autoformer_EncDec import series_decomp
 from layers.Embed import DataEmbedding_wo_pos
 from layers.StandardNorm import Normalize
-
+import numpy as np
+import os
+from datetime import datetime
+import matplotlib.pyplot as plt
+import pandas as pd
+import csv
 
 class DFT_series_decomp(nn.Module):
     """
@@ -154,6 +159,7 @@ class PastDecomposableMixing(nn.Module):
 
     def forward(self, x_list):
         length_list = []
+
         for x in x_list:
             _, T, _ = x.size()
             length_list.append(T)
@@ -168,21 +174,234 @@ class PastDecomposableMixing(nn.Module):
                 trend = self.cross_layer(trend)
             season_list.append(season.permute(0, 2, 1))
             trend_list.append(trend.permute(0, 2, 1))
-
         # bottom-up season mixing
         out_season_list = self.mixing_multi_scale_season(season_list)
         # top-down trend mixing
+        # [batch_size/2, seq_len, feature_dim]
         out_trend_list = self.mixing_multi_scale_trend(trend_list)
+        # print(f"out_season_list: {out_season_list}")
 
         out_list = []
+
+
+        
         for ori, out_season, out_trend, length in zip(x_list, out_season_list, out_trend_list,
                                                       length_list):
             out = out_season + out_trend
             if self.channel_independence:
                 out = ori + self.out_cross_layer(out)
             out_list.append(out[:, :length, :])
-        return out_list
 
+        # if not self.training:
+        #     self._save_trend_data(x_list, out_season_list, out_trend_list,
+        #                                               length_list)
+        
+        return out_list
+        
+    def _save_trend_data(self, x_list, out_season_list, out_trend_list, length_list):
+        """保存趋势数据和相关信息"""
+        if not hasattr(self, 'trend_counter'):
+            self.trend_counter = 0
+            
+        # 创建保存目录
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        base_folder = f'./test_results/trend_analysis_{timestamp}'
+        data_folder = os.path.join(base_folder, 'data')
+        plot_folder = os.path.join(base_folder, 'plots')
+        
+        for folder in [data_folder, plot_folder]:
+            if not os.path.exists(folder):
+                os.makedirs(folder, exist_ok=True)
+
+        # 从输入中提取数据并转换为numpy数组
+        x_data = [x.detach().cpu().numpy() for x in x_list]
+        season_data = [s.detach().cpu().numpy() for s in out_season_list]
+        trend_data = [t.detach().cpu().numpy() for t in out_trend_list]
+
+        
+        # 保存为CSV格式
+        for i in range(len(x_data)):
+            # 获取当前样本的所有数据长度
+            x_len = len(x_data[i].flatten())
+            print(f"season_data.shape: {season_data[i].shape}")
+            print(f"trend_data.shape: {trend_data[i].shape}")
+            season_len = len(season_data[i].flatten())
+            trend_len = len(trend_data[i].flatten())
+            print(f"x_len: {x_len}, season_len: {season_len}, trend_len: {trend_len}")
+            # assert False
+            
+            # 使用最大长度进行填充
+            max_len = max(x_len, season_len, trend_len)
+            
+            data_dict = {
+                'timestep': np.arange(max_len),
+                'input': np.pad(x_data[i].flatten(), 
+                              (0, max_len - x_len), 
+                              mode='constant', 
+                              constant_values=np.nan),
+                'seasonal': np.pad(season_data[i].flatten(), 
+                                 (0, max_len - season_len), 
+                                 mode='constant', 
+                                 constant_values=np.nan),
+                'trend': np.pad(trend_data[i].flatten(), 
+                              (0, max_len - trend_len), 
+                              mode='constant', 
+                              constant_values=np.nan),
+            }
+            
+            if length_list:
+                data_dict['length'] = length_list[i]
+
+            df = pd.DataFrame(data_dict)
+            csv_path = os.path.join(data_folder, f'decomposition_data_{self.trend_counter}_sample_{i}.csv')
+            df.to_csv(csv_path, index=False)
+
+        # 保存平均值（使用相同的长度处理）
+        max_len = max(len(x.flatten()) for x in x_data)
+        
+        mean_dict = {
+            'timestep': np.arange(max_len),
+            'avg_input': np.mean([np.pad(x.flatten(), 
+                                       (0, max_len - len(x.flatten())), 
+                                       mode='constant', 
+                                       constant_values=np.nan) 
+                                for x in x_data], axis=0),
+            'avg_seasonal': np.mean([np.pad(s.flatten(), 
+                                          (0, max_len - len(s.flatten())), 
+                                          mode='constant', 
+                                          constant_values=np.nan) 
+                                   for s in season_data], axis=0),
+            'avg_trend': np.mean([np.pad(t.flatten(), 
+                                       (0, max_len - len(t.flatten())), 
+                                       mode='constant', 
+                                       constant_values=np.nan) 
+                                for t in trend_data], axis=0),
+        }
+
+        df_mean = pd.DataFrame(mean_dict)
+        csv_path = os.path.join(data_folder, f'decomposition_data_{self.trend_counter}_average.csv')
+        df_mean.to_csv(csv_path, index=False)
+
+        # 可视化
+        # self._visualize_decomposition(x_data, season_data, trend_data, self.trend_counter, plot_folder)
+        
+        self.trend_counter += 1
+
+    def _visualize_decomposition(self, x_data, season_data, trend_data, counter, save_folder):
+        """可视化分解结果"""
+        def process_data(data_list):
+            # 打印每个数组的形状
+            print("Array shapes in list:", [arr.shape for arr in data_list])
+            
+            # 只使用第一个数组
+            data = data_list[0]
+            # 转置为 (batch_size, seq_len, feature_dim)
+            return np.transpose(data, (2, 1, 0))
+        
+        try:
+            # 打印原始数据信息
+            print(f"Number of arrays - x: {len(x_data)}, season: {len(season_data)}, trend: {len(trend_data)}")
+            print(f"First array shapes - x: {x_data[0].shape}, season: {season_data[0].shape}, trend: {trend_data[0].shape}")
+            
+            # 处理数据
+            x_processed = process_data(x_data)      # shape: (batch_size, seq_len, feature_dim)
+            season_processed = process_data(season_data)
+            trend_processed = process_data(trend_data)
+            
+            # 对特征维度取平均
+            x_processed = np.mean(x_processed, axis=2)      # shape: (batch_size, seq_len)
+            season_processed = np.mean(season_processed, axis=2)
+            trend_processed = np.mean(trend_processed, axis=2)
+            
+            # 打印处理后的形状
+            print(f"Processed shapes - x: {x_processed.shape}, season: {season_processed.shape}, trend: {trend_processed.shape}")
+            
+            # 为了避免图太多，我们只可视化前几个样本
+            num_samples_to_plot = min(5, x_processed.shape[0])
+            
+            # 单个样本的可视化
+            for i in range(num_samples_to_plot):
+                fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(15, 12))
+                
+                # 获取当前样本的数据
+                x = x_processed[i]
+                seasonal = season_processed[i]
+                trend = trend_processed[i]
+                
+                # 设置时间轴
+                time_steps = np.arange(len(x))
+                
+                # 原始数据
+                ax1.plot(time_steps, x, color='#2878B5', linewidth=2, label='Original')
+                ax1.set_title(f'Original Time Series (Sample {i+1})', fontsize=12, pad=10)
+                ax1.set_ylabel('Value', fontsize=10)
+                ax1.grid(True, linestyle='--', alpha=0.7)
+                ax1.legend()
+                
+                # 趋势成分
+                ax2.plot(time_steps, trend, color='#C82423', linewidth=2, label='Trend')
+                ax2.set_title('Trend Component', fontsize=12, pad=10)
+                ax2.set_ylabel('Value', fontsize=10)
+                ax2.grid(True, linestyle='--', alpha=0.7)
+                ax2.legend()
+                
+                # 季节性成分
+                ax3.plot(time_steps, seasonal, color='#009977', linewidth=2, label='Seasonal')
+                ax3.set_title('Seasonal Component', fontsize=12, pad=10)
+                ax3.set_xlabel('Time Steps', fontsize=10)
+                ax3.set_ylabel('Value', fontsize=10)
+                ax3.grid(True, linestyle='--', alpha=0.7)
+                ax3.legend()
+                
+                plt.tight_layout(pad=3.0)
+                fig.suptitle(f'Time Series Decomposition - Batch Sample {i+1}', fontsize=14, y=1.02)
+                plt.savefig(os.path.join(save_folder, f'decomposition_viz_{counter}_sample_{i+1}.pdf'),
+                        bbox_inches='tight', dpi=300)
+                plt.close()
+            
+            # 批次平均值图
+            fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(15, 12))
+            
+            # 计算批次平均值
+            avg_x = np.mean(x_processed, axis=0)
+            avg_trend = np.mean(trend_processed, axis=0)
+            avg_season = np.mean(season_processed, axis=0)
+            
+            time_steps = np.arange(len(avg_x))
+            
+            # 绘制平均值
+            ax1.plot(time_steps, avg_x, color='#2878B5', linewidth=2, label='Batch Average')
+            ax1.set_title('Average Original Time Series', fontsize=12, pad=10)
+            ax1.set_ylabel('Value', fontsize=10)
+            ax1.grid(True, linestyle='--', alpha=0.7)
+            ax1.legend()
+            
+            ax2.plot(time_steps, avg_trend, color='#C82423', linewidth=2, label='Batch Average')
+            ax2.set_title('Average Trend Component', fontsize=12, pad=10)
+            ax2.set_ylabel('Value', fontsize=10)
+            ax2.grid(True, linestyle='--', alpha=0.7)
+            ax2.legend()
+            
+            ax3.plot(time_steps, avg_season, color='#009977', linewidth=2, label='Batch Average')
+            ax3.set_title('Average Seasonal Component', fontsize=12, pad=10)
+            ax3.set_xlabel('Time Steps', fontsize=10)
+            ax3.set_ylabel('Value', fontsize=10)
+            ax3.grid(True, linestyle='--', alpha=0.7)
+            ax3.legend()
+            
+            plt.tight_layout(pad=3.0)
+            fig.suptitle('Average Time Series Decomposition (Across Batch)', fontsize=14, y=1.02)
+            plt.savefig(os.path.join(save_folder, f'decomposition_viz_{counter}_batch_average.pdf'),
+                    bbox_inches='tight', dpi=300)
+            plt.close()
+            
+        except Exception as e:
+            print(f"Error in visualization: {str(e)}")
+            print(f"Input types - x: {type(x_data)}, season: {type(season_data)}, trend: {type(trend_data)}")
+            if isinstance(x_data, list):
+                print(f"First array in list - x: {x_data[0].shape}")
+                print("All shapes in x_data:", [x.shape for x in x_data])
+            raise e
 
 class Model(nn.Module):
 
@@ -327,6 +546,7 @@ class Model(nn.Module):
         return x_enc, x_mark_enc
 
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+        init_x_enc = x_enc
 
         x_enc, x_mark_enc = self.__multi_scale_process_inputs(x_enc, x_mark_enc)
 
@@ -354,7 +574,9 @@ class Model(nn.Module):
 
         # embedding
         enc_out_list = []
+
         x_list = self.pre_enc(x_list)
+
         if x_mark_enc is not None:
             for i, x, x_mark in zip(range(len(x_list[0])), x_list[0], x_mark_list):
                 enc_out = self.enc_embedding(x, x_mark)  # [B,T,C]
@@ -368,11 +590,31 @@ class Model(nn.Module):
         for i in range(self.layer):
             enc_out_list = self.pdm_blocks[i](enc_out_list)
 
+
         # Future Multipredictor Mixing as decoder for future
         dec_out_list = self.future_multi_mixing(B, enc_out_list, x_list)
+        # output the first point x and enc_out to csv by adding
+        
 
         dec_out = torch.stack(dec_out_list, dim=-1).sum(-1)
+
         dec_out = self.normalize_layers[0](dec_out, 'denorm')
+        
+        # save the first point to csv by adding not using panda
+        if not self.training:
+            with open(f'sl{self.configs.seq_len}_pl{self.configs.pred_len}_trends.csv', 'a') as f:
+                writer = csv.writer(f)
+                # x_list[0][:][dim] -> [B, T, 1]
+                # x_list = [B/2, seq, 1]
+                # enc_out_list[0][:][dim] -> [B, T, 1]
+                # sum the last dimension of x_list[0][:] and enc_out_list[0][:]
+                # x_list_output = x_list[0].sum(-1)
+                init_x_enc_denorm = self.normalize_layers[0](init_x_enc, 'denorm')
+                enc_out_list_denorm = self.normalize_layers[0](enc_out_list[0], 'denorm')
+                for x_enc_denorm, enc_out_denorm in zip(init_x_enc_denorm, enc_out_list_denorm):
+                    writer.writerow([x_enc_denorm[0][0].detach().cpu().item(), enc_out_denorm[0].sum(-1).detach().cpu().item()])
+        
+    
         return dec_out
 
     def future_multi_mixing(self, B, enc_out_list, x_list):
@@ -514,3 +756,5 @@ class Model(nn.Module):
             return dec_out  # [B, N]
         else:
             raise ValueError('Other tasks implemented yet')
+        
+
