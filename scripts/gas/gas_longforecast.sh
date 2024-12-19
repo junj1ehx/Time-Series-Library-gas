@@ -9,9 +9,12 @@ wells=("苏14区块.csv")
 # scripts_to_run=("gas_lstm.sh" "gas_rnn.sh" "gas_svm.sh" "gas_ann.sh" "gas_PatchTST.sh" "gas_timemixer.sh" "gas_iTransformer.sh")
 scripts_to_run=("gas_lstm.sh" "gas_rnn.sh" "gas_svm.sh" "gas_ann.sh" "gas_timemixer.sh")
 # scripts_to_run=("gas_ann.sh" "gas_rnn.sh")
-# scripts_to_run=("gas_svm.sh")
+# scripts_to_run=("gas_timemixer.sh")
+# scripts_to_run=("gas_lstm.sh" "gas_rnn.sh" "gas_timemixer.sh")
 
-scripts_custom_model=("gas_svm.sh" "gas_ann.sh" "gas_lstm.sh" "gas_rnn.sh")
+# scripts_to_run=("gas_PatchTST.sh" "gas_timemixer.sh" "gas_iTransformer.sh")
+
+# scripts_custom_model=("gas_svm.sh" "gas_ann.sh" "gas_lstm.sh" "gas_rnn.sh")
 # "gas_PatchTST.sh" "gas_Timemixer.sh"
 # scripts_custom_model=("gas_ann.sh")
 # Export the wells array so it can be used by other scripts
@@ -70,12 +73,12 @@ run_scripts_in_parallel() {
 # run_scripts_in_parallel 12 0 4 28 M
 run_scripts_in_parallel 6 0 3 1 S
 run_scripts_in_parallel 6 0 6 1 S
-run_scripts_in_parallel 12 0 3 1 S
-run_scripts_in_parallel 12 0 6 1 S
-run_scripts_in_parallel 12 0 12 1 S
 run_scripts_in_parallel 6 0 12 1 S
-run_scripts_in_parallel 6 0 21 1 S
-run_scripts_in_parallel 6 0 45 1 S
-run_scripts_in_parallel 12 0 24 1 S
-run_scripts_in_parallel 12 0 42 1 S
-run_scripts_in_parallel 12 0 90 1 S
+# run_scripts_in_parallel 6 0 21 1 S
+# run_scripts_in_parallel 6 0 45 1 S
+# run_scripts_in_parallel 12 0 3 1 S
+# run_scripts_in_parallel 12 0 6 1 S
+# run_scripts_in_parallel 12 0 12 1 S
+# run_scripts_in_parallel 12 0 24 1 S
+# run_scripts_in_parallel 12 0 42 1 S
+# run_scripts_in_parallel 12 0 90 1 S

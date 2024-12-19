@@ -24,7 +24,7 @@ class Model(nn.Module):
             hidden_size=self.d_model,
             num_layers=self.num_layers,
             batch_first=True,
-            dropout=self.dropout
+            # dropout=self.dropout
         )
 
         # Output projection

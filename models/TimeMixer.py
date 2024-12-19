@@ -600,19 +600,19 @@ class Model(nn.Module):
 
         dec_out = self.normalize_layers[0](dec_out, 'denorm')
         
-        # save the first point to csv by adding not using panda
-        if not self.training:
-            with open(f'sl{self.configs.seq_len}_pl{self.configs.pred_len}_trends.csv', 'a') as f:
-                writer = csv.writer(f)
-                # x_list[0][:][dim] -> [B, T, 1]
-                # x_list = [B/2, seq, 1]
-                # enc_out_list[0][:][dim] -> [B, T, 1]
-                # sum the last dimension of x_list[0][:] and enc_out_list[0][:]
-                # x_list_output = x_list[0].sum(-1)
-                init_x_enc_denorm = self.normalize_layers[0](init_x_enc, 'denorm')
-                enc_out_list_denorm = self.normalize_layers[0](enc_out_list[0], 'denorm')
-                for x_enc_denorm, enc_out_denorm in zip(init_x_enc_denorm, enc_out_list_denorm):
-                    writer.writerow([x_enc_denorm[0][0].detach().cpu().item(), enc_out_denorm[0].sum(-1).detach().cpu().item()])
+        # save trend
+        # if not self.training:
+        #     with open(f'sl{self.configs.seq_len}_pl{self.configs.pred_len}_trends.csv', 'a') as f:
+        #         writer = csv.writer(f)
+        #         # x_list[0][:][dim] -> [B, T, 1]
+        #         # x_list = [B/2, seq, 1]
+        #         # enc_out_list[0][:][dim] -> [B, T, 1]
+        #         # sum the last dimension of x_list[0][:] and enc_out_list[0][:]
+        #         # x_list_output = x_list[0].sum(-1)
+        #         init_x_enc_denorm = self.normalize_layers[0](init_x_enc, 'denorm')
+        #         enc_out_list_denorm = self.normalize_layers[0](enc_out_list[0], 'denorm')
+        #         for x_enc_denorm, enc_out_denorm in zip(init_x_enc_denorm, enc_out_list_denorm):
+        #             writer.writerow([x_enc_denorm[0][0].detach().cpu().item(), enc_out_denorm[0].sum(-1).detach().cpu().item()])
         
     
         return dec_out

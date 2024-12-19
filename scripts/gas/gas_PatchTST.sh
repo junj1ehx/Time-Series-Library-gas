@@ -35,6 +35,10 @@ for well in ${wells[@]}; do
         --use_multi_gpu \
         --devices 0,1 \
         --freq m \
-        --batch_size 512 \
+        --batch_size 128 \
+        --learning_rate 0.01 \
+        --train_epochs 20 \
+        --d_model 32 \
+        --d_ff 32 \
         --inverse
 done

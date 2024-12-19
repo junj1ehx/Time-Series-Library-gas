@@ -28,11 +28,16 @@ for well in ${wells[@]}; do
         --label_len $label_len \
         --pred_len $pred_len \
         --enc_in $enc_in \
-        --d_model 64 \
+        --d_model 16 \
+        --learning_rate 0.001 \
+        --train_epochs 20 \
+        --patience 10 \
         --des 'Exp' \
         --itr 1 \
         --use_multi_gpu \
         --devices 0,1 \
-        --batch_size 512 \
+        --batch_size 128 \
         --inverse
 done 
+
+

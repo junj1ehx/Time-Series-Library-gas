@@ -13,11 +13,11 @@ e_layers=2
 down_sampling_layers=1
 down_sampling_window=2
 learning_rate=0.001
-d_model=64
-d_ff=1024
-train_epochs=100
+d_model=16
+d_ff=16
+train_epochs=20
 patience=10
-batch_size=512
+batch_size=128
 
 for well in ${wells[@]}; do
     python -u run.py \
