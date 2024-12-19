@@ -1,0 +1,35 @@
+graph TD
+    Input[Input Time Series] --> Norm[Normalization Layer]
+    Norm --> MultiScale[Multi-Scale Decomposition]
+    
+    subgraph MultiScale[Multi-Scale Processing]
+        D1[Scale 1] --> |DFT/MovingAvg| S1[Seasonal Component 1]
+        D1 --> T1[Trend Component 1]
+        D2[Scale 2] --> |DFT/MovingAvg| S2[Seasonal Component 2]
+        D2 --> T2[Trend Component 2]
+        D3[Scale 3] --> |DFT/MovingAvg| S3[Seasonal Component 3]
+        D3 --> T3[Trend Component 3]
+    end
+
+    subgraph SeasonMixing[Multi-Scale Season Mixing]
+        S1 --> |Bottom-up| MS1[Mixed Season 1]
+        S2 --> |Bottom-up| MS2[Mixed Season 2]
+        S3 --> |Bottom-up| MS3[Mixed Season 3]
+    end
+
+    subgraph TrendMixing[Multi-Scale Trend Mixing]
+        T1 --> |Top-down| MT1[Mixed Trend 1]
+        T2 --> |Top-down| MT2[Mixed Trend 2]
+        T3 --> |Top-down| MT3[Mixed Trend 3]
+    end
+
+    SeasonMixing --> Combine[Combination Layer]
+    TrendMixing --> Combine
+    Combine --> Project[Projection Layer]
+    Project --> Output[Output Prediction]
+
+    style Input fill:#f9f,stroke:#333
+    style Output fill:#f9f,stroke:#333
+    style MultiScale fill:#e4f7fb
+    style SeasonMixing fill:#ffe4e1
+    style TrendMixing fill:#e6ffe4
