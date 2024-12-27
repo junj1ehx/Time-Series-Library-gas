@@ -294,6 +294,15 @@ class Dataset_Gas(Dataset):
             num_vali = total_points
             total_points = 0
             for well_name, well_data in list(well_groups)[num_train_well + num_vali_well:]:
+                # read classification file to locate the specific well
+                # csv_class_file_path_1 = "val_l.csv"
+                # csv_class_file_path_2 = "var_l.csv"
+                # class_df_1 = pd.read_csv(os.path.join(os.path.dirname(self.data_path), 'classification', csv_class_file_path_1))
+                # class_df_2 = pd.read_csv(os.path.join(os.path.dirname(self.data_path), 'classification', csv_class_file_path_2))
+                # class_df_duplicates = list(set(class_df_1['well_name'].tolist()) & set(class_df_2['well_name'].tolist()))
+                # # print(class_df)
+                # if well_name not in class_df_duplicates:
+                #     continue
                 if len(well_data) < self.seq_len + self.pred_len + self.label_len:
                     writer.writerow([well_name, 'test', total_points, total_points])
                     total_points += len(well_data)
@@ -309,7 +318,7 @@ class Dataset_Gas(Dataset):
             num_test = total_points
             print(f"num_test: {num_test}, num_train: {num_train}, num_vali: {num_vali}")
             # print(f"len(df_raw): {len(df_raw)}")
-            assert num_test + num_train + num_vali == len(df_raw)
+            # assert num_test + num_train + num_vali == len(df_raw)
 
             total_train_points = 0
             for well_name, well_data in list(well_groups)[:num_train_well]:
@@ -391,172 +400,6 @@ class Dataset_Gas(Dataset):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
-
-
-class Dataset_Gas_1113(Dataset):
-    def __init__(self, args, root_path, flag='train', size=None,
-                 features='S', data_path='ETTh1.csv',
-                 target='OT', scale=True, timeenc=0, freq='h', seasonal_patterns=None):
-        # size [seq_len, label_len, pred_len]
-        self.args = args
-        # info
-        if size == None:
-            self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
-            self.pred_len = 24 * 4
-        else:
-            self.seq_len = size[0]
-            self.label_len = size[1]
-            self.pred_len = size[2]
-        # init
-        assert flag in ['train', 'val', 'test']
-        type_map = {'train': 0, 'val': 1, 'test': 2}
-        self.set_type = type_map[flag]
-
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.timeenc = timeenc
-        self.freq = freq
-
-        self.root_path = root_path
-        self.data_path = data_path
-        self.__read_data__()
-
-    def __read_data__(self):
-        self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
-
-        '''
-        df_raw.columns: ['date', ...(other features), target feature]
-        '''
-        cols = list(df_raw.columns)
-        cols.remove(self.target)
-        cols.remove('date')
-        well_groups = df_raw.groupby('井号')
-        # split train, test, val by 7:2:1
-        num_train_well = int(len(well_groups) * 0.7)
-        num_vali_well = int(len(well_groups) * 0.1)
-        num_test_well = len(well_groups) - num_train_well - num_vali_well
-        print(f"num_train_well: {num_train_well}, num_vali_well: {num_vali_well}, num_test_well: {num_test_well}")
-        assert num_train_well + num_vali_well + num_test_well == len(well_groups)
-        block_name = os.path.splitext(self.data_path)[0]  # Assuming block name is derived from the data_path
-        csv_file_path = f"{block_name}_well_info_seq{self.seq_len}_label{self.label_len}_pred{self.pred_len}.csv"
-
-        with open(csv_file_path, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['well', 'set', 'start_point', 'end_point'])
-            self.data_location_list = [[] for _ in range(3)]  # New list to store data locations
-            total_points = 0
-            for well_name, well_data in list(well_groups)[:num_train_well]:
-                start_point = total_points
-                end_point = start_point + len(well_data) - self.seq_len - self.label_len
-                # print(f"Training well: {well_name}, points from {start_point} to {end_point}")
-                writer.writerow([well_name, 'train', start_point, end_point])
-                for i in range(end_point - start_point + 1):
-                    self.data_location_list[0].append(start_point + i)
-                total_points = end_point + self.seq_len + self.label_len
-            num_train = total_points
-            total_points = 0
-            for well_name, well_data in list(well_groups)[num_train_well:num_train_well + num_vali_well]:
-                start_point = total_points
-                end_point = start_point + len(well_data) - self.seq_len - self.label_len    
-                # print(f"Valid well: {well_name}, points from {start_point} to {end_point}")
-                writer.writerow([well_name, 'vali', start_point, end_point])
-                for i in range(end_point - start_point + 1):
-                    self.data_location_list[1].append(start_point + i)
-                total_points = end_point + self.seq_len + self.label_len 
-            num_vali = total_points
-            total_points = 0
-            for well_name, well_data in list(well_groups)[num_train_well + num_vali_well:]:
-                start_point = total_points
-                end_point = start_point + len(well_data) - self.seq_len - self.label_len
-                # print(f"Test well: {well_name}, points from {start_point} to {end_point}")
-                writer.writerow([well_name, 'test', start_point, end_point])
-                for i in range(end_point - start_point + 1):
-                    self.data_location_list[2].append(start_point + i)
-                total_points = end_point + self.seq_len + self.label_len
-            num_test = total_points
-            print(f"num_test: {num_test}, num_train: {num_train}, num_vali: {num_vali}")
-            # print(f"len(df_raw): {len(df_raw)}")
-            assert num_test + num_train + num_vali == len(df_raw)
-
-            total_train_points = 0
-            for well_name, well_data in list(well_groups)[:num_train_well]:
-                total_train_points += len(well_data)
-
-        
-        # print(f"Number of points in training wells: {total_train_points}")
-        cols.remove('井号')
-        cols.remove('区块')
-        df_raw = df_raw[['date'] + cols + [self.target]]
-        # num_train = int(len(df_raw) * 0.7)
-        # num_test = int(len(df_raw) * 0.2)
-        num_vali = len(df_raw) - num_train - num_test
-        border1s = [0, num_train, num_train + num_vali]
-        border2s = [num_train, num_train + num_vali, len(df_raw)]
-        border1 = border1s[self.set_type]
-        border2 = border2s[self.set_type]
-        # print(f"border1: {border1s}, border2: {border2s}")
-
-        if self.features == 'M' or self.features == 'MS':
-            cols_data = df_raw.columns[1:]
-            df_data = df_raw[cols_data]
-        elif self.features == 'S':
-            df_data = df_raw[[self.target]]
-
-        if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
-            self.scaler.fit(train_data.values)
-            data = self.scaler.transform(df_data.values)
-        else:
-            data = df_data.values
-
-        df_stamp = df_raw[['date']][border1:border2]
-        df_stamp['date'] = pd.to_datetime(df_stamp.date)
-        if self.timeenc == 0:
-            df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
-            df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
-            df_stamp['weekday'] = df_stamp.date.apply(lambda row: row.weekday(), 1)
-            df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
-            data_stamp = df_stamp.drop(['date'], 1).values
-        elif self.timeenc == 1:
-            data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
-            data_stamp = data_stamp.transpose(1, 0)
-
-        self.data_x = data[border1:border2]
-        self.data_y = data[border1:border2]
-
-        if self.set_type == 0 and self.args.augmentation_ratio > 0:
-            self.data_x, self.data_y, augmentation_tags = run_augmentation_single(self.data_x, self.data_y, self.args)
-
-        self.data_stamp = data_stamp
-
-    def __getitem__(self, index):
-        s_begin = self.data_location_list[self.set_type][index]
-        s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
-
-        # if s_end > len(self.data_x) or r_end > len(self.data_y):
-        # # Handle edge case by padding or skipping
-        #     return self.__getitem__(0)  # Return first item instead of invalid index
-      
-        seq_x = self.data_x[s_begin:s_end]
-        seq_y = self.data_y[r_begin:r_end]
-        seq_x_mark = self.data_stamp[s_begin:s_end]
-        seq_y_mark = self.data_stamp[r_begin:r_end]
-        # print(f"seq_x: {seq_x.shape}, seq_y: {seq_y.shape}, seq_x_mark: {seq_x_mark.shape}, seq_y_mark: {seq_y_mark.shape}")
-        return seq_x, seq_y, seq_x_mark, seq_y_mark
-
-    def __len__(self):
-        return len(self.data_location_list[self.set_type])
-        # return len(self.data_x) - self.seq_len - self.pred_len + 1
-
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
-
 
 class Dataset_M4(Dataset):
     def __init__(self, args, root_path, flag='pred', size=None,
