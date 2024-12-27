@@ -49,7 +49,7 @@ class Model(nn.Module):
         self.output_layer = nn.Sequential(
             nn.Linear(1, 32),
             nn.ReLU(),
-            nn.Linear(32, self.enc_in)
+            nn.Linear(32, self.enc_in * self.pred_len)
         )
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
@@ -58,8 +58,7 @@ class Model(nn.Module):
         
         # Get the sequence for prediction
         batch_size = enc_out.size(0)
-        x = enc_out[:, -self.pred_len:, :]
-        seq_len = x.size(1)
+        x = enc_out[:, -1:, :]  # Only take the last time step
         
         # Reshape for feature extraction
         x = x.reshape(-1, self.d_model)
@@ -78,7 +77,7 @@ class Model(nn.Module):
         predictions = self.output_layer(svm_out)
         
         # Reshape back to sequence format
-        predictions = predictions.view(batch_size, seq_len, self.enc_in)
+        predictions = predictions.view(batch_size, self.pred_len, self.enc_in)
         
         return predictions
 
