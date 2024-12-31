@@ -603,6 +603,7 @@ class Model(nn.Module):
         # save trend
         if not self.training:
             output_trend_path = os.path.join('./test_results/',f'sl{self.configs.seq_len}_pl{self.configs.pred_len}_trends.csv')
+            os.makedirs("./test_results/", exist_ok=True)
             with open(output_trend_path, 'a') as f:
                 writer = csv.writer(f)
                 # x_list[0][:][dim] -> [B, T, 1]
